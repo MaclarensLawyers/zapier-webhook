@@ -108,7 +108,7 @@
     <h2>Lease Entry</h2>
     
     <input type="hidden" name="action_id" id="action_id">
-    <input type="hidden" name="lease" id="lease">
+    <input type="hidden" name="user_email" id="user_email">
     
     <div>
       <label>
@@ -132,7 +132,7 @@
     const params = new URLSearchParams(window.location.search);
     
     document.getElementById('action_id').value = params.get('action_id') || '';
-    document.getElementById('lease').value = params.get('lease') || '';
+    document.getElementById('user_email').value = params.get('user_email') || '';
     
     // Handle form submission
     document.getElementById('zapierForm').addEventListener('submit', function(event) {
