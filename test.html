@@ -129,7 +129,7 @@
     
     <button type="submit" id="submitBtn">Submit to Zapier</button>
   </form>
-  <div style="font-size:10px; font-style:italic; margin-top:5px;">v0.2</div>
+  <div style="font-size:10px; font-style:italic; margin-top:5px;">v0.3</div>
   <script>
     // Get query parameters from the iframe src
     const params = new URLSearchParams(window.location.search);
@@ -152,10 +152,17 @@
       submitBtn.innerHTML = '<span class="spinner"></span>Loading...';
       
       // Send message to parent window to trigger submit
-      window.parent.postMessage({
-        type: 'TRIGGER_PARENT_SUBMIT',
-        formId: 'formDataCollection'
-      }, '*');
+      console.log('Sending postMessage to parent...');
+      try {
+        window.parent.postMessage({
+          type: 'TRIGGER_PARENT_SUBMIT',
+          formId: 'formDataCollection',
+          timestamp: Date.now()
+        }, '*');
+        console.log('postMessage sent successfully');
+      } catch (error) {
+        console.error('Error sending postMessage:', error);
+      }
       
       // Send form data to API
       const formData = new FormData(form);
@@ -165,6 +172,7 @@
         body: formData
       })
       .then(response => {
+        console.log('Zapier webhook response:', response);
         // After 1 second, show "Submitted"
         setTimeout(() => {
           submitBtn.innerHTML = 'Submitted';
