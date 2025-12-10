@@ -73,18 +73,20 @@
       margin-top: 2px;
     }
 
-    button:hover {
+    button:hover:not(:disabled) {
       transform: translateY(-1px);
       box-shadow: 0 3px 12px rgba(102, 126, 234, 0.3);
     }
 
-    button:active {
+    button:active:not(:disabled) {
       transform: translateY(0);
     }
 
     button:disabled {
       opacity: 0.8;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     @keyframes spin {
