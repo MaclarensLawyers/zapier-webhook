@@ -129,64 +129,16 @@
     
     <button type="submit" id="submitBtn">Submit to Zapier</button>
   </form>
-  <div id="apiFeedback" style="font-size:12px; margin-top:10px; padding:8px; border-radius:4px; display:none;"></div>
-  <div style="font-size:10px; font-style:italic; margin-top:5px;">v0.1</div>
+  <div style="font-size:10px; font-style:italic; margin-top:5px;">v0.2</div>
   <script>
-    const API_BASE_URL = 'https://tables-api.softr.io/api/v1';
-    let personalAccessToken = null;
-    
     // Get query parameters from the iframe src
     const params = new URLSearchParams(window.location.search);
-    const softrApiKey = params.get('softr-api-key');
     
     document.getElementById('action_id').value = params.get('action_id') || '';
     document.getElementById('user_email').value = params.get('user_email') || '';
     document.getElementById('premises').value = params.get('premises') || '';
     document.getElementById('tenant').value = params.get('tenant') || '';
     document.getElementById('client').value = params.get('client') || '';
-    
-    // Display API feedback
-    function showFeedback(message, isError = false) {
-      const feedbackEl = document.getElementById('apiFeedback');
-      feedbackEl.textContent = message;
-      feedbackEl.style.display = 'block';
-      feedbackEl.style.backgroundColor = isError ? '#fee' : '#efe';
-      feedbackEl.style.color = isError ? '#c00' : '#060';
-      feedbackEl.style.border = isError ? '1px solid #fcc' : '1px solid #cfc';
-    }
-    
-    // Retrieve personal access token from Softr API
-    async function getPersonalAccessToken() {
-      if (!softrApiKey) {
-        console.error('No Softr API key provided');
-        showFeedback('No API key provided', true);
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/token`, {
-          method: 'GET',
-          headers: {
-            'Softr-Api-Key': softrApiKey
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        personalAccessToken = data.token || data.personalAccessToken;
-        console.log('Personal access token retrieved successfully');
-        showFeedback('Personal access token retrieved successfully');
-      } catch (error) {
-        console.error('Error retrieving personal access token:', error);
-        showFeedback(`Error: ${error.message}`, true);
-      }
-    }
-    
-    // Initialize token on page load
-    getPersonalAccessToken();
     
     // Handle form submission
     document.getElementById('zapierForm').addEventListener('submit', function(event) {
@@ -198,6 +150,12 @@
       // Show loading state
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<span class="spinner"></span>Loading...';
+      
+      // Send message to parent window to trigger submit
+      window.parent.postMessage({
+        type: 'TRIGGER_PARENT_SUBMIT',
+        formId: 'formDataCollection'
+      }, '*');
       
       // Send form data to API
       const formData = new FormData(form);
