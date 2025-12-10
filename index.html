@@ -111,6 +111,7 @@
     <input type="hidden" name="user_email" id="user_email">
     <input type="hidden" name="premises" id="premises">
     <input type="hidden" name="tenant" id="tenant">
+    <input type="hidden" name="client" id="client">
     
     <div>
       <label>
@@ -130,13 +131,48 @@
   </form>
 
   <script>
+    const API_BASE_URL = 'https://tables-api.softr.io/api/v1';
+    let personalAccessToken = null;
+    
     // Get query parameters from the iframe src
     const params = new URLSearchParams(window.location.search);
+    const softrApiKey = params.get('softr-api-key');
     
     document.getElementById('action_id').value = params.get('action_id') || '';
     document.getElementById('user_email').value = params.get('user_email') || '';
     document.getElementById('premises').value = params.get('premises') || '';
     document.getElementById('tenant').value = params.get('tenant') || '';
+    document.getElementById('client').value = params.get('client') || '';
+    
+    // Retrieve personal access token from Softr API
+    async function getPersonalAccessToken() {
+      if (!softrApiKey) {
+        console.error('No Softr API key provided');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/token`, {
+          method: 'GET',
+          headers: {
+            'Softr-Api-Key': softrApiKey
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        personalAccessToken = data.token || data.personalAccessToken;
+        console.log('Personal access token retrieved successfully');
+      } catch (error) {
+        console.error('Error retrieving personal access token:', error);
+      }
+    }
+    
+    // Initialize token on page load
+    getPersonalAccessToken();
     
     // Handle form submission
     document.getElementById('zapierForm').addEventListener('submit', function(event) {
@@ -172,5 +208,3 @@
   </script>
 </body>
 </html>
-
-
