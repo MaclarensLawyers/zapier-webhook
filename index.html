@@ -111,6 +111,7 @@
     <input type="hidden" name="user_email" id="user_email">
     <input type="hidden" name="premises" id="premises">
     <input type="hidden" name="tenant" id="tenant">
+    <input type="hidden" name="client" id="client">
     
     <div>
       <label>
@@ -136,6 +137,7 @@
     document.getElementById('action_id').value = params.get('action_id') || '';
     document.getElementById('user_email').value = params.get('user_email') || '';
     document.getElementById('premises').value = params.get('premises') || '';
+    document.getElementById('tenant').value = params.get('tenant') || '';
     document.getElementById('tenant').value = params.get('tenant') || '';
     
     // Handle form submission
@@ -172,4 +174,5 @@
   </script>
 </body>
 </html>
+
 
