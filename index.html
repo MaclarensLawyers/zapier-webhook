@@ -129,7 +129,7 @@
     
     <button type="submit" id="submitBtn">Submit to Zapier</button>
   </form>
-  <div style="font-size:10px; font-style:italic; margin-top:5px;">v0.1</div>
+  <div style="font-size:10px; font-style:italic; margin-top:5px;">v0.4</div>
   <script>
     // Get query parameters from the iframe src
     const params = new URLSearchParams(window.location.search);
@@ -151,7 +151,7 @@
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<span class="spinner"></span>Loading...';
       
-      // Send form data to API
+      // Send form data to API first
       const formData = new FormData(form);
       
       fetch(form.action, {
@@ -159,22 +159,43 @@
         body: formData
       })
       .then(response => {
-        // After 1 second, show "Submitted"
-        setTimeout(() => {
-          submitBtn.innerHTML = 'Submitted';
-          submitBtn.style.background = 'linear-gradient(135deg, #2e923d 0%, #2e923d 100%)';
-        }, 1000);
+        console.log('Zapier webhook response status:', response.status);
+        
+        // Check if response is successful (200)
+        if (response.status === 200) {
+          // Send message to parent window to trigger submit
+          console.log('Zapier returned 200, sending postMessage to parent...');
+          try {
+            window.parent.postMessage({
+              type: 'TRIGGER_PARENT_SUBMIT',
+              formId: 'formDataCollection',
+              timestamp: Date.now()
+            }, '*');
+            console.log('postMessage sent successfully');
+          } catch (error) {
+            console.error('Error sending postMessage:', error);
+          }
+          
+          // After 1 second, show "Submitted"
+          setTimeout(() => {
+            submitBtn.innerHTML = 'Submitted';
+            submitBtn.style.background = 'linear-gradient(135deg, #2e923d 0%, #2e923d 100%)';
+          }, 1000);
+        } else {
+          // Non-200 response
+          console.error('Zapier returned non-200 status:', response.status);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Error - Try Again';
+          submitBtn.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+        }
       })
       .catch(error => {
         console.error('Error:', error);
         submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Submit to Zapier';
+        submitBtn.innerHTML = 'Error - Try Again';
+        submitBtn.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
       });
     });
   </script>
 </body>
 </html>
-
-
-
-
