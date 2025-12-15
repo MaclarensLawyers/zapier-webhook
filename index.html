@@ -149,7 +149,7 @@
           document.getElementById('submitBtn').disabled = true;
           document.getElementById('submitBtn').style.opacity = '0.5';
           document.getElementById('submitBtn').style.cursor = 'not-allowed';
-          document.getElementById('submitBtn').innerHTML = 'Click Edit to Submit';
+          document.getElementById('submitBtn').innerHTML = 'Form Not Active';
           
           document.getElementById('new_entry').disabled = true;
           document.getElementById('update_entry').disabled = true;
@@ -191,52 +191,76 @@
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<span class="spinner"></span>Loading...';
       
-      // Send form data to API first
-      const formData = new FormData(form);
+      // Request current form data from parent before submitting
+      console.log('Requesting current form data from parent...');
+      window.parent.postMessage({
+        type: 'REQUEST_FORM_DATA',
+        formId: 'formDataCollection'
+      }, '*');
       
-      fetch(form.action, {
-        method: form.method,
-        body: formData
-      })
-      .then(response => {
-        console.log('Zapier webhook response status:', response.status);
-        
-        // Check if response is successful (200)
-        if (response.status === 200) {
-          // Send message to parent window to trigger submit
-          console.log('Zapier returned 200, sending postMessage to parent...');
-          try {
-            window.parent.postMessage({
-              type: 'TRIGGER_PARENT_SUBMIT',
-              formId: 'formDataCollection',
-              timestamp: Date.now()
-            }, '*');
-            console.log('postMessage sent successfully');
-          } catch (error) {
-            console.error('Error sending postMessage:', error);
+      // Listen for form data response
+      window.addEventListener('message', function handleFormData(event) {
+        if (event.data && event.data.type === 'FORM_DATA_RESPONSE') {
+          console.log('Received form data from parent:', event.data.formData);
+          
+          // Remove this listener after receiving data
+          window.removeEventListener('message', handleFormData);
+          
+          // Prepare form data with both static and dynamic values
+          const formData = new FormData(form);
+          
+          // Add the dynamic form data from parent
+          if (event.data.formData) {
+            for (const [key, value] of Object.entries(event.data.formData)) {
+              formData.set(key, value);
+            }
           }
           
-          // After 1 second, show "Submitted"
-          setTimeout(() => {
-            submitBtn.innerHTML = 'Submitted';
-            submitBtn.style.background = 'linear-gradient(135deg, #2e923d 0%, #2e923d 100%)';
-          }, 1000);
-        } else {
-          // Non-200 response
-          console.error('Zapier returned non-200 status:', response.status);
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = 'Error - Try Again';
-          submitBtn.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+          // Send combined data to Zapier
+          fetch(form.action, {
+            method: form.method,
+            body: formData
+          })
+          .then(response => {
+            console.log('Zapier webhook response status:', response.status);
+            
+            // Check if response is successful (200)
+            if (response.status === 200) {
+              // Send message to parent window to trigger submit
+              console.log('Zapier returned 200, sending postMessage to parent...');
+              try {
+                window.parent.postMessage({
+                  type: 'TRIGGER_PARENT_SUBMIT',
+                  formId: 'formDataCollection',
+                  timestamp: Date.now()
+                }, '*');
+                console.log('postMessage sent successfully');
+              } catch (error) {
+                console.error('Error sending postMessage:', error);
+              }
+              
+              // After 1 second, show "Submitted"
+              setTimeout(() => {
+                submitBtn.innerHTML = 'Submitted';
+                submitBtn.style.background = 'linear-gradient(135deg, #2e923d 0%, #2e923d 100%)';
+              }, 1000);
+            } else {
+              // Non-200 response
+              console.error('Zapier returned non-200 status:', response.status);
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = 'Error - Try Again';
+              submitBtn.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Error - Try Again';
+            submitBtn.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+          });
         }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Error - Try Again';
-        submitBtn.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
       });
     });
   </script>
 </body>
 </html>
-
