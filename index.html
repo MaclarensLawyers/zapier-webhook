@@ -131,7 +131,7 @@
     
     <button type="submit" id="submitBtn">Submit to Zapier</button>
   </form>
-  <div style="font-size:10px; font-style:italic; margin-top:5px;">v0.3</div>
+  <div style="font-size:10px; font-style:italic; margin-top:5px;">v0.5</div>
   <script>
     // Check if iframe is within the parent form
     function checkParentForm() {
@@ -140,7 +140,7 @@
         formId: 'formDataCollection'
       }, '*');
     }
-    
+
     // Listen for response from parent
     window.addEventListener('message', function(event) {
       if (event.data && event.data.type === 'FORM_EXISTS_RESPONSE') {
@@ -150,72 +150,72 @@
           document.getElementById('submitBtn').style.opacity = '0.5';
           document.getElementById('submitBtn').style.cursor = 'not-allowed';
           document.getElementById('submitBtn').innerHTML = 'Form Not Active';
-          
+
           document.getElementById('new_entry').disabled = true;
           document.getElementById('update_entry').disabled = true;
-          
+
           // Grey out labels
           const labels = document.querySelectorAll('label');
           labels.forEach(label => {
             label.style.color = '#ccc';
             label.style.cursor = 'not-allowed';
           });
-          
+
           console.log('Form disabled: Parent form not found');
         } else {
           console.log('Parent form found, form is active');
         }
       }
     });
-    
+
     // Check on load
     checkParentForm();
-    
+
     // Get query parameters from the iframe src
     const params = new URLSearchParams(window.location.search);
-    
+
     document.getElementById('action_id').value = params.get('action_id') || '';
     document.getElementById('user_email').value = params.get('user_email') || '';
     document.getElementById('premises').value = params.get('premises') || '';
     document.getElementById('tenant').value = params.get('tenant') || '';
     document.getElementById('client').value = params.get('client') || '';
-    
+
     // Handle form submission
     document.getElementById('zapierForm').addEventListener('submit', function(event) {
       event.preventDefault();
-      
+
       const submitBtn = document.getElementById('submitBtn');
       const form = this;
-      
+
       // Show loading state
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<span class="spinner"></span>Loading...';
-      
+
       // Request current form data from parent before submitting
       console.log('Requesting current form data from parent...');
       window.parent.postMessage({
         type: 'REQUEST_FORM_DATA',
         formId: 'formDataCollection'
       }, '*');
-      
+
       // Listen for form data response
       window.addEventListener('message', function handleFormData(event) {
         if (event.data && event.data.type === 'FORM_DATA_RESPONSE') {
           console.log('Received form data from parent:', event.data.formData);
-          
+
           // Remove this listener after receiving data
           window.removeEventListener('message', handleFormData);
-          
+
           // Prepare form data with both static and dynamic values
           const formData = new FormData(form);
-          
+
           // Add the dynamic form data from parent
           if (event.data.formData) {
             for (const [key, value] of Object.entries(event.data.formData)) {
               formData.set(key, value);
             }
           }
-          
+
           // Send combined data to Zapier
           fetch(form.action, {
             method: form.method,
@@ -223,27 +223,14 @@
           })
           .then(response => {
             console.log('Zapier webhook response status:', response.status);
-            
+
             // Check if response is successful (200)
             if (response.status === 200) {
-              // Send message to parent window to trigger submit
-              console.log('Zapier returned 200, sending postMessage to parent...');
-              try {
-                window.parent.postMessage({
-                  type: 'TRIGGER_PARENT_SUBMIT',
-                  formId: 'formDataCollection',
-                  timestamp: Date.now()
-                }, '*');
-                console.log('postMessage sent successfully');
-              } catch (error) {
-                console.error('Error sending postMessage:', error);
-              }
-              
-              // After 1 second, show "Submitted"
-              setTimeout(() => {
-                submitBtn.innerHTML = 'Submitted';
-                submitBtn.style.background = 'linear-gradient(135deg, #2e923d 0%, #2e923d 100%)';
-              }, 1000);
+              console.log('Zapier returned 200 - submission successful');
+
+              // Show success message
+              submitBtn.innerHTML = 'Submission successful';
+              submitBtn.style.background = 'linear-gradient(135deg, #2e923d 0%, #2e923d 100%)';
             } else {
               // Non-200 response
               console.error('Zapier returned non-200 status:', response.status);
